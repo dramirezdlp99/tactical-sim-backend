@@ -1,15 +1,18 @@
 package com.enterprise.tacticalsim.modules.user.controller;
 
+import com.enterprise.tacticalsim.core.ApiResponse;
 import com.enterprise.tacticalsim.modules.user.dto.AuthResponse;
 import com.enterprise.tacticalsim.modules.user.dto.LoginRequest;
 import com.enterprise.tacticalsim.modules.user.dto.RegisterRequest;
 import com.enterprise.tacticalsim.modules.user.service.AuthService;
-import com.enterprise.tacticalsim.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
