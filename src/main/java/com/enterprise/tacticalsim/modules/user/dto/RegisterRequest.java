@@ -1,5 +1,6 @@
 package com.enterprise.tacticalsim.modules.user.dto;
 
+import com.enterprise.tacticalsim.modules.user.model.EntityType;
 import com.enterprise.tacticalsim.modules.user.model.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,4 +35,9 @@ public class RegisterRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    // CAMBIO: antes RegisterScreen.jsx mandaba "entityType" en el JSON y
+    // Jackson lo descartaba en silencio porque este campo no existía.
+    @NotNull(message = "Entity type is required")
+    private EntityType entityType;
 }
