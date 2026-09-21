@@ -17,4 +17,9 @@ public class AuthResponse {
     private Long userId;
     private String email;
     private String role;
+
+    // CAMBIO: para que TacticalSimulator.jsx pueda cambiar de modo
+    // (Franquicia/Academia/Federación) sin volver a pedirle al usuario
+    // que elija de nuevo cada vez que inicia sesión.
+    private String entityType;
 }
