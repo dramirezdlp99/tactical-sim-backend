@@ -3,6 +3,7 @@ package com.enterprise.tacticalsim.gateway.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,11 +42,30 @@ public class SecurityConfig {
 
                 // 4. Configurar reglas de autorización de rutas
                 .authorizeHttpRequests(auth -> auth
+                        // === CAMBIO 1 (causa real del 403) ===
+                        // El navegador manda un preflight OPTIONS antes de todo POST
+                        // "no simple" (con JSON + Authorization). Ese preflight NUNCA
+                        // trae el header Authorization, así que si no se permite
+                        // explícitamente, cae en anyRequest().authenticated() y
+                        // Spring Security lo rechaza antes de que tu JS vea la
+                        // respuesta real -> el navegador lo reporta como 403.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/h2-console/**",
                                 "/actuator/**"
                         ).permitAll()
+
+                        // === CAMBIO 2 ===
+                        // Matcher explícito para /simulation/run con los roles reales
+                        // que ya existen en tu enum Role (ROLE_COACH, y agregamos
+                        // ROLE_ADMIN para no bloquear pruebas desde ese rol).
+                        // hasAnyRole() antepone "ROLE_" automáticamente, así que
+                        // aquí se pasa "COACH"/"ADMIN", no "ROLE_COACH".
+                        .requestMatchers(HttpMethod.POST, "/api/v1/simulation/**")
+                        .hasAnyRole("COACH", "ANALYST", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
 
@@ -69,22 +89,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes permitidos (Frontend React en desarrollo)
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
-
-        // Métodos HTTP permitidos (incluyendo OPTIONS para Preflight requests)
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-
-        // Cabeceras permitidas en las peticiones
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
-
-        // Cabeceras expuestas que el cliente puede leer
         configuration.setExposedHeaders(List.of("Authorization"));
-
-        // Permitir envío de credenciales/cookies/tokens
         configuration.setAllowCredentials(true);
-
-        // Duración del caché de la respuesta preflight (1 hora)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
