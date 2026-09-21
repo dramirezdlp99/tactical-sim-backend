@@ -46,6 +46,14 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    // CAMBIO: nuevo campo para que la selección del registro
+    // (Franquicia / Academia / Federación) persista de verdad y no
+    // se pierda al terminar el formulario. Con ddl-auto=update, H2
+    // agrega la columna sola al reiniciar el backend.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entity_type", nullable = false, length = 20)
+    private EntityType entityType;
+
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
