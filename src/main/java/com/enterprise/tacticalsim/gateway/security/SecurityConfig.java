@@ -1,6 +1,7 @@
 package com.enterprise.tacticalsim.gateway.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    // Antes esta lista estaba quemada en el codigo (solo localhost:3000).
+    // Ahora viene de application.properties (cors.allowed-origins), que a
+    // su vez lee la variable de entorno CORS_ALLOWED_ORIGINS. Esto permite
+    // agregar el dominio real del frontend desplegado (Vercel) sin tocar
+    // ni recompilar el codigo -- solo cambiando la variable de entorno
+    // en el panel de Render.
+    @Value("${cors.allowed-origins}")
+    private String corsAllowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -38,6 +48,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // 3. Permitir renderizar la consola de H2 Database en iframe
+                //    OJO: /h2-console SOLO debe estar accesible en desarrollo local.
+                //    Si este backend llega a desplegarse en algo alcanzable desde
+                //    internet (no solo localhost), esta ruta debe deshabilitarse
+                //    (spring.h2.console.enabled=false) porque permite ejecutar SQL
+                //    arbitrario contra la base de datos desde el navegador.
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
 
                 // 4. Configurar reglas de autorización de rutas
@@ -60,10 +75,24 @@ public class SecurityConfig {
                         // === CAMBIO 2 ===
                         // Matcher explícito para /simulation/run con los roles reales
                         // que ya existen en tu enum Role (ROLE_COACH, y agregamos
-                        // ROLE_ADMIN para no bloquear pruebas desde ese rol).
+                        // ROLE_ANALYST/ROLE_ADMIN para no bloquear pruebas).
                         // hasAnyRole() antepone "ROLE_" automáticamente, así que
-                        // aquí se pasa "COACH"/"ADMIN", no "ROLE_COACH".
+                        // aquí se pasa "COACH"/"ANALYST"/"ADMIN", no "ROLE_COACH".
                         .requestMatchers(HttpMethod.POST, "/api/v1/simulation/**")
+                        .hasAnyRole("COACH", "ANALYST", "ADMIN")
+
+                        // === CAMBIO 3 (auditoría de seguridad) ===
+                        // Antes, GET /api/v1/simulation/history y /history/export
+                        // solo caían en el anyRequest().authenticated() genérico,
+                        // es decir CUALQUIER usuario autenticado podía consultarlos
+                        // aunque el botón "Ver Historial" estuviera oculto en el
+                        // frontend para no-Analistas. Ocultar un botón no es control
+                        // de acceso real: cualquiera con un token válido podía
+                        // llamarlo directo con Postman/curl. Ahora se restringe
+                        // explícitamente a los mismos roles que pueden guardar
+                        // jugadas, ya que cada quien solo ve SU PROPIO historial
+                        // (filtrado por email en SimulationHistoryService).
+                        .requestMatchers(HttpMethod.GET, "/api/v1/simulation/history/**")
                         .hasAnyRole("COACH", "ANALYST", "ADMIN")
 
                         .anyRequest().authenticated()
@@ -84,12 +113,18 @@ public class SecurityConfig {
     /**
      * Define la política CORS explícita para permitir que React (puerto 3000)
      * consuma la API REST y envíe headers de autenticación JWT.
+     *
+     * Nota de seguridad: los orígenes están en una lista blanca explícita
+     * (localhost:3000 / 127.0.0.1:3000), NO en "*". Con allowCredentials(true),
+     * Spring ni siquiera dejaría usar "*" como origen -- esta configuración
+     * ya está bien hecha, solo hay que recordar agregar aquí el dominio real
+     * si algún día se despliega el frontend fuera de localhost.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
+        configuration.setAllowedOrigins(List.of(corsAllowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));
