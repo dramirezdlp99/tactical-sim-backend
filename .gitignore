@@ -1,0 +1,23 @@
+# Compiled class files / build output
+target/
+out/
+*.class
+
+# IDE (IntelliJ)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Si en algun momento decides mover el JWT secret a variables de entorno
+# en vez de dejarlo en application.properties, agrega aqui el archivo
+# que lo contenga localmente, por ejemplo:
+# application-local.properties
+# .env
