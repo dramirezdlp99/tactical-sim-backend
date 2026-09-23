@@ -1,6 +1,7 @@
 package com.enterprise.tacticalsim.modules.user.service;
 
 import com.enterprise.tacticalsim.modules.user.dto.TwoFactorChallengeResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -29,10 +30,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * bruta contra /verify-2fa dentro de la ventana de 5 minutos. Por eso
  * cada challenge ahora cuenta sus intentos fallidos y se invalida
  * después de MAX_ATTEMPTS, obligando a reiniciar el login.
+ *
+ * CAMBIO: el envio del codigo ahora pasa por EmailService, que lo manda
+ * por correo real (Brevo) si esta configurado, o cae al log de consola
+ * si no -- ver EmailService para el detalle de esa decision.
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TwoFactorService {
+
+    private final EmailService emailService;
 
     private static final long CODE_TTL_SECONDS = 300; // 5 minutos
     private static final int MAX_ATTEMPTS = 5;
@@ -51,9 +59,7 @@ public class TwoFactorService {
 
         pendingChallenges.put(tempToken, new PendingChallenge(email, code, expiresAt, new AtomicInteger(0)));
 
-        log.info("[2FA] Codigo generado para {}: {} (expira en {}s). " +
-                        "En produccion esto se enviaria por SMS/email, no por log.",
-                email, code, CODE_TTL_SECONDS);
+        emailService.sendTwoFactorCode(email, code, CODE_TTL_SECONDS);
 
         return TwoFactorChallengeResponse.builder()
                 .tempToken(tempToken)
