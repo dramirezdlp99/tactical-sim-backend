@@ -43,13 +43,16 @@ public class SimulationHistoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<SimulationRecordResponse>>> list(Authentication authentication) {
-        List<SimulationRecordResponse> records = historyService.listForUser(authentication.getName());
+        // CAMBIO: historial compartido de todo el equipo (ver
+        // SimulationHistoryService.listAll para la explicacion completa),
+        // ya no filtrado por el usuario conectado.
+        List<SimulationRecordResponse> records = historyService.listAll();
         return ResponseEntity.ok(ApiResponse.success(records, "Historial obtenido"));
     }
 
     @GetMapping(value = "/export", produces = "text/csv")
     public ResponseEntity<String> exportCsv(Authentication authentication) {
-        String csv = historyService.exportCsvForUser(authentication.getName());
+        String csv = historyService.exportCsvAll();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=historial_simulaciones.csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
