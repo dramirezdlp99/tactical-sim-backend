@@ -10,4 +10,9 @@ import java.util.List;
 public interface SimulationRecordRepository extends JpaRepository<SimulationRecord, Long> {
 
     List<SimulationRecord> findByUserEmailOrderByCreatedAtDesc(String userEmail);
+
+    // NUEVO: historial compartido de todo el equipo, ordenado del mas
+    // reciente al mas antiguo -- usado por los Analistas para ver las
+    // jugadas guardadas por CUALQUIER Entrenador, no solo las propias.
+    List<SimulationRecord> findAllByOrderByCreatedAtDesc();
 }
