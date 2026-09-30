@@ -34,21 +34,29 @@ public class SimulationHistoryService {
         return toResponse(record);
     }
 
-    public List<SimulationRecordResponse> listForUser(String userEmail) {
-        return repository.findByUserEmailOrderByCreatedAtDesc(userEmail)
+    // CAMBIO CLAVE: antes filtraba por el correo del usuario conectado
+    // (findByUserEmailOrderByCreatedAtDesc), lo que dejaba el historial
+    // del Analista siempre vacio -- un Analista nunca guarda jugadas el
+    // mismo, solo el Entrenador puede. Ahora el historial es compartido:
+    // cualquiera con acceso ve TODAS las jugadas que cualquier Entrenador
+    // del equipo haya guardado, que es el flujo real descrito en el caso
+    // de estudio (el Analista revisa el trabajo del Entrenador).
+    public List<SimulationRecordResponse> listAll() {
+        return repository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    public String exportCsvForUser(String userEmail) {
-        List<SimulationRecord> records = repository.findByUserEmailOrderByCreatedAtDesc(userEmail);
+    public String exportCsvAll() {
+        List<SimulationRecord> records = repository.findAllByOrderByCreatedAtDesc();
 
         StringBuilder csv = new StringBuilder();
-        csv.append("Fecha,Deporte,Jugada,Probabilidad Exito (%),Eficiencia (%),Riesgo (%),Accion Recomendada\n");
+        csv.append("Fecha,Guardado por,Deporte,Jugada,Probabilidad Exito (%),Eficiencia (%),Riesgo (%),Accion Recomendada\n");
 
         for (SimulationRecord r : records) {
             csv.append(r.getCreatedAt().format(CSV_DATE_FORMAT)).append(",")
+                    .append(escapeCsv(r.getUserEmail())).append(",")
                     .append(r.getSport()).append(",")
                     .append(escapeCsv(r.getPlayName())).append(",")
                     .append(percent(r.getSuccessProbability())).append(",")
@@ -83,6 +91,7 @@ public class SimulationHistoryService {
                 .recommendedAction(r.getRecommendedAction())
                 .tacticalNote(r.getTacticalNote())
                 .createdAt(r.getCreatedAt())
+                .savedByEmail(r.getUserEmail())
                 .build();
     }
 }
