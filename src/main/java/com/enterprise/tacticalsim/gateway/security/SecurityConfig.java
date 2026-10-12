@@ -90,10 +90,27 @@ public class SecurityConfig {
                         // de acceso real: cualquiera con un token válido podía
                         // llamarlo directo con Postman/curl. Ahora se restringe
                         // explícitamente a los mismos roles que pueden guardar
-                        // jugadas, ya que cada quien solo ve SU PROPIO historial
-                        // (filtrado por email en SimulationHistoryService).
+                        // jugadas. (Nota: el historial ahora es COMPARTIDO por todo
+                        // el equipo -- ver SimulationHistoryService.listAll -- asi
+                        // que ya no se filtra por el email de quien consulta; el
+                        // control de acceso real es este de roles.)
                         .requestMatchers(HttpMethod.GET, "/api/v1/simulation/history/**")
                         .hasAnyRole("COACH", "ANALYST", "ADMIN")
+
+                        // === CAMBIO 4 (Duplicacion de Pantalla en Tiempo Real) ===
+                        // Crear una sala de espejo exige JWT con rol de quien dibuja
+                        // en la pizarra (mismos roles que guardan jugadas).
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mirror/rooms")
+                        .hasAnyRole("COACH", "ANALYST", "ADMIN")
+
+                        // El canal WebSocket /ws/mirror NO usa JWT: el navegador no
+                        // puede mandar cabeceras Authorization al abrir un WebSocket
+                        // y el proyector no tiene login. La autorizacion se hace
+                        // dentro del handshake (MirrorHandshakeInterceptor): el
+                        // EMISOR debe presentar el emitterKey de la sala; el VISOR
+                        // solo necesita el codigo de sala (de solo lectura). Los
+                        // origenes se validan alli contra cors.allowed-origins.
+                        .requestMatchers("/ws/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
