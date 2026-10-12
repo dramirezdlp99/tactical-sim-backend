@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -42,4 +43,28 @@ public class SimulationResponseDto {
 
     @JsonProperty("spin_rate_rpm")
     private Double spinRateRpm;
+
+    // ---- Modelo predictivo entrenado + "Cuerpo Tecnico Rival" (todos opcionales) ----
+    // Si el motor de IA es una version anterior, llegan como null y el
+    // frontend simplemente no los dibuja.
+
+    /** Posicion estimada de los defensores (tenis: del restador) DESPUES de reaccionar. */
+    @JsonProperty("predicted_defense")
+    private List<Map<String, Object>> predictedDefense;
+
+    /** Esquema defensivo legible, ej. "Hombre a hombre con ayuda en la pintura". */
+    @JsonProperty("defense_scheme")
+    private String defenseScheme;
+
+    /** Baloncesto: probabilidad de anotar un tiro limpio contra la defensa predicha. */
+    @JsonProperty("clean_shot_probability")
+    private Double cleanShotProbability;
+
+    /** Baloncesto: efectividad del mejor pase disponible. */
+    @JsonProperty("pass_effectiveness")
+    private Double passEffectiveness;
+
+    /** Descripcion del modelo que produjo el resultado (tipo, datos, metricas). */
+    @JsonProperty("model_info")
+    private String modelInfo;
 }
