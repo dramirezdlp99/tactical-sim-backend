@@ -29,6 +29,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring WebSocket: relevo de "Duplicacion de Pantalla en Tiempo Real"
+             (modulo mirror). Es del ecosistema Spring, sin costo adicional. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- Spring WebFlux (Requerido para WebClient) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
