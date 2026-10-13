@@ -30,6 +30,7 @@ mvn spring-boot:run     # puerto 9096, base H2 en memoria por defecto
 | `JWT_SECRET` | **Obligatoria en producción**: el valor por defecto del repositorio es solo para desarrollo |
 | `CORS_ALLOWED_ORIGINS` | Orígenes permitidos (HTTP y WebSocket); debe incluir la URL del frontend |
 | `AI_ENGINE_URL` | URL del motor de IA |
+| `AI_INTERNAL_KEY` | Clave compartida con el motor de IA (cabecera `X-Internal-Key`). Opcional; debe ser igual a la del servicio de IA |
 | `H2_CONSOLE_ENABLED` | Poner `false` en producción |
 
 ## Pruebas
